@@ -1,26 +1,31 @@
-import keyboard
-import subprocess
+import frida
+import sys
 
-# Global variable to keep track of the Frida process
-frida_process = None
+def on_message(message, data):
+    if message['type'] == 'send':
+        print(f"[+] {message['payload']}")
+    elif message['type'] == 'error':
+        print(f"[-] {message['stack']}")
 
-TARGET_PROCESS = "zombie.survival.craft.z"
+# Connect to the device
+device = frida.get_usb_device()
 
-def toggle_frida_script():
-	global frida_process
-	# If there's a running Frida process, terminate it
-	if frida_process:
-		frida_process.terminate()
-		frida_process = None
-		print("Frida script terminated.")
-	else:
-		# Start a new Frida process
-		command = f"frida -U -f {TARGET_PROCESS} -l your_frida_script.js --no-pause"
-		frida_process = subprocess.Popen(command, shell=True)
-		print("Frida script started.")
+# Spawn the application
+pid = device.spawn(["zombie.survival.craft.z"])
+session = device.attach(pid)
 
-# Listen for the F12 hotkey
-keyboard.add_hotkey('F12', toggle_frida_script)
+# Load the script
+with open("dist/agent.js", "r") as f:
+    script = session.create_script(f.read())
 
-# Block the script so it doesn't exit immediately
-keyboard.wait('esc')
+# Set up the message handler
+script.on("message", on_message)
+
+# Load the script
+script.load()
+
+# Resume the application
+device.resume(pid)
+
+# Keep the script running
+sys.stdin.read()

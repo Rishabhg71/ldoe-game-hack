@@ -1,8 +1,6 @@
 import "frida-il2cpp-bridge";
 import * as fs from 'fs';
 import * as path from 'path';
-
-
 console.log("Frida Loaded Successfully");
 
 const TIMEOUT = 30000; // 30 seconds
@@ -49,37 +47,28 @@ Il2Cpp.perform(() => {
 
         const PlayerInventoriesModel = Client.class("Assets.Core.Models.PlayerInventories.PlayerInventoriesModel")
         const PlayerClass = Client.class("Assets.Core.Models.Users.Player");
-        const BackpackInventoryController = Client.class("Assets.Core.Sync.Controllers.Inventories.BaseInventoryController");
         const Inventories = Client.class("Assets.Core.Models.InventoryModels.Inventories");
+        const HealthController = Client.class("Assets.Core.Game.Battle.Gui.MainUI.HealthBar.HealthController");
 
         waitForPlayer().then((player) => {
-            const inventory = player.method<Il2Cpp.Object>("get_PlayerInventories").invoke();
-            const ref = inventory.ref(true);
+            console.log("Got the player object");
+            const Character = player.method<Il2Cpp.Object>("get_Character").invoke();
 
-            // inv.weakRef(true).target.
-            const inventoryEnum = inventory.method<Il2Cpp.Object>("GetEnumerator").invoke();
-            // System.Collections.IEnumerator.get_Current
-            // System.Collections.IDictionaryEnumerator.get_Value
+            const Inventories = Character.method<Il2Cpp.Object>("get_Inventories").invoke()
+            console.log("MY backpack limit", Inventories.method<number>("CellsCount").invoke());
 
-            // while (inventoryEnum.method<boolean>("MoveNext").invoke()) {
-            //     const current = inventoryEnum.method<Il2Cpp.Object>("get_Current").invoke();
-            //     // const value = current.method<Il2Cpp.Object>("get_Value").invoke();
-            //     console.log(current);
-            // }
+            setInterval(() => {
+                const Health = Character.tryField<Il2Cpp.Object>("_health")
+                if (Health && Health?.value.method<number>("GetAmount").invoke() < 40) {
 
-
-            // inventoryEnum.class.methods.forEach(method => {
-            //     console.log(method.name);
-            // });
-            // console.log(inventoryEnum);
+                    Character.method("Heal").invoke(100);
+                }
+                console.log("My health", Health?.value.method("GetAmount").invoke());
+            }, 1000);
         });
 
         Il2Cpp.trace(true)
             .classes(
-                // PlayerClass,
-                // // PlayerInventoriesModel,
-                // BackpackInventoryController,
-                Inventories
             )
             .filterMethods((method) => {
                 if (method.name === "GetNowTs") return false;
@@ -88,11 +77,8 @@ Il2Cpp.perform(() => {
             .and()
             .attach();
 
-        // Il2Cpp.trace(true).methods().and().attach();
-
-        // PlayerClass.methods.forEach(method => { console.log(method.name) });
-
     } catch (error) {
+        send(error);
         console.error(error);
     }
 });

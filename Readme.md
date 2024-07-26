@@ -14,3 +14,19 @@ adb shell "/data/local/tmp/frida-server &"
 
 adb shell cat /proc/<pid>/maps | grep libil2cpp.so
 adb shell ps | grep com.android.chrome
+
+adb shell getprop ro.product.cpu.abi
+
+
+
+
+MyOwnInventory: Assets.Core.Models.Users.Player.get_Character -> CharacterModel.get_Inventories()
+
+
+
+
+
+
+
+
+

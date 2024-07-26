@@ -2,3 +2,4 @@ node_modules
 dist/*
 DummyDll/*
 __handlers__/*
+frida-server
