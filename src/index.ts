@@ -1,88 +1,216 @@
 import "frida-il2cpp-bridge";
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 console.log("Frida Loaded Successfully");
 
 const TIMEOUT = 30000; // 30 seconds
 
-// console.log("Loaded modules:");
-// Process.enumerateModules().forEach(module => {
-//     console.log(module.name);
-// });
+type DpadDirection = "w" | "a" | "s" | "d" | "wa" | "wd" | "sa" | "sd" | "stop";
 
-const waitForPlayer = (
-    // player: Il2Cpp.Class | Il2Cpp.ValueType | Il2Cpp.Object | null
-): Promise<Il2Cpp.Class | Il2Cpp.ValueType | Il2Cpp.Object> => {
+class ObjectGetters {
+    // @ts-ignore
+    public player: Il2Cpp.Object;
+    // @ts-ignore
+    public ui: Il2Cpp.Object;
 
-    const Client = Il2Cpp.domain.assembly("Client").image;
+    public async doInitialSetup() {
+        this.player = await this.waitForPlayer();
+        this.ui = await this.waitForUi();
+    }
+    public getDpad() {
+        const dpad = this.ui.tryField<Il2Cpp.Object>("DpadController")?.value;
+        if (!dpad) throw Error("dpad is null");
 
-    const PlayerClass = Client.class("Assets.Core.Models.Users.Player");
+        return dpad;
+    }
 
-    let PlayerObject: Il2Cpp.Class | Il2Cpp.ValueType | Il2Cpp.Object | null = null;
-    PlayerClass.method("get_TimeNow").implementation = function () {
-        if (!PlayerObject) PlayerObject = this;
-        // console.log("Just logging");
-        return this.method("get_TimeNow").invoke();
-    };
+    public async waitForPlayer(): Promise<
+        Il2Cpp.Object
+    > {
+        const Client = Il2Cpp.domain.assembly("Client").image;
+
+        const PlayerClass = Client.class("Assets.Core.Models.Users.Player");
+
+        let PlayerObject: Il2Cpp.Object | null = null;
+        PlayerClass.method("get_TimeNow").implementation = function () {
+            // @ts-ignore
+            if (!PlayerObject) PlayerObject = this;
+            return this.method("get_TimeNow").invoke();
+        };
+
+        return new Promise((resolve, reject) => {
+            const interval = setInterval(() => {
+                if (PlayerObject) {
+                    resolve(PlayerObject);
+                    interval && clearInterval(interval);
+                } else console.log("Waiting for PlayerObject");
+            }, 2000);
+        });
+    }
+
+    public async waitForUi(): Promise<Il2Cpp.Object> {
+        const Client = Il2Cpp.domain.assembly("Client").image;
+
+        const BattleUiController = Client.class(
+            "Assets.Core.Game.Battle.BattleUiController"
+        );
+
+        // BattleUiController.fields.forEach((field) => { console.log(field.name) });
+
+        let battleUiController: Il2Cpp.Class | Il2Cpp.ValueType | Il2Cpp.Object | null = null;
+
+        BattleUiController.method("Update").implementation = function () {
+            if (!battleUiController) battleUiController = this;
+            return this.method("Update").invoke();
+        };
+
+        return new Promise((resolve, reject) => {
+            const interval = setInterval(() => {
+                let str = "Assets.Core.Game.Battle.BattleUiController -> ";
+
+                if (!battleUiController) return console.log(str + "null");
+                const battleContainer =
+                    battleUiController.tryField<Il2Cpp.Object>("Container")?.value;
+                str += "Assets.Core.Game.Battle.BattleUiContainer -> ";
+
+                if (!battleContainer) return console.log(str + "null");
+                const mainUiController =
+                    battleContainer?.tryField<Il2Cpp.Object>("MainUiController")?.value;
+                str += "Assets.Core.Game.Battle.Gui.MainUI.MainUiController -> ";
+
+                if (!mainUiController) return console.log(str + "null");
+                const mainUiContainer =
+                    mainUiController.tryField<Il2Cpp.Object>("Container")?.value;
+
+                if (!mainUiContainer) return console.log(str + "null");
+                str += "Assets.Core.Game.Battle.Gui.MainUI.MainUiContainer";
+                console.log(str);
+
+                resolve(mainUiContainer);
+                clearInterval(interval);
+            }, 2000);
+        });
+    }
+}
 
 
-    return new Promise((resolve, reject) => {
-        setInterval(() => {
-            if (PlayerObject) resolve(PlayerObject);
-            else console.log("Waiting for PlayerObject");
-        }, 2000);
-    });
-};
+class Character {
+    characterRef: Il2Cpp.Object;
+    object_getter: ObjectGetters;
 
-Il2Cpp.perform(() => {
+    constructor(character: Il2Cpp.Object, object_getter: ObjectGetters) {
+        this.characterRef = character;
+        this.object_getter = object_getter;
+    }
+    public getHealth() {
+        const Health = this.characterRef.tryField<Il2Cpp.Object>("_health")?.value
+        if (!Health) throw Error("Health is null");
+        return Health.method<number>("GetAmount").invoke();
+    }
+
+    public getInventorySpace() {
+        const Inventories = this.characterRef.method<Il2Cpp.Object>("get_Inventories").invoke();
+        return Inventories.method<number>("CellsCount").invoke()
+    }
+    public heal() {
+        this.characterRef.method<void>("Heal").invoke(90);
+    }
+
+    public async runFor(direction: DpadDirection, time: number) {
+        this.run(direction);
+        await new Promise((resolve) => setTimeout(resolve, time));
+        console.log("Stopping Player");
+        const dpad = this.object_getter.getDpad()
+        dpad.method<void>("StopDpad").invoke();
+        // this.run("stop");
+    }
+
+    public run(direction: DpadDirection) {
+        const dpad = this.object_getter.getDpad()
+
+        const UnityEngine = Il2Cpp.domain.assembly("UnityEngine").image;
+
+        let Vector2 = UnityEngine.class("UnityEngine.Vector2").new();
+        Vector2.method<void>("Set").invoke(0.5, 0.5);
+        Vector2 = Vector2.method<Il2Cpp.Object>("get_normalized").invoke()
+
+        let cords = [0.0, 0.0];
+        if (direction === "w") cords = [0.0, 1.0];
+        if (direction === "a") cords = [-1.0, 0.0];
+        if (direction === "s") cords = [0.0, -1.0];
+        if (direction === "d") cords = [1.0, 0.0];
+        if (direction === "wa") cords = [-1.0, 1.0];
+        if (direction === "wd") cords = [1.0, 1.0];
+        if (direction === "sa") cords = [-1.0, -1.0];
+        if (direction === "sd") cords = [1.0, -1.0];
+        if (direction === "stop") cords = [0, 0];
+
+        Vector2.method<void>("Set").invoke(cords[0], cords[1]);
+        dpad.method<void>("Run").invoke(Vector2, 0.9);
+    }
+}
+
+class GamePlayer {
+    object_getters: ObjectGetters;
+    character: Character;
+
+    constructor(object_getters: ObjectGetters) {
+        this.object_getters = object_getters;
+
+        const characterRef = this.object_getters.player.method<Il2Cpp.Object>("get_Character").invoke();
+        const character = new Character(characterRef, object_getters)
+        this.character = character;
+    }
+
+    public async start() {
+        // this.character.run("wa");
+        this.character.runFor("wa", 2000);
+
+        // setInterval(() => {
+        //     const health = this.character.getHealth();
+        //     if (health < 40) {
+        //         // this.character.heal();
+        //     }
+        //     console.log("My health", this.character.getHealth());
+        // }, 1000);
+
+    }
+}
+
+Il2Cpp.perform(async () => {
     console.log(
         "libil2cpp.so loaded, performing Il2Cpp operations...",
         Il2Cpp.unityVersion
     );
     try {
-        // const AssemblyCSharp = Il2Cpp.domain.assembly("Assembly-CSharp").image;
-        // const GlobalMap = AssemblyCSharp.class("Assets.Core.Game")
-
         const Client = Il2Cpp.domain.assembly("Client").image;
 
-        const PlayerInventoriesModel = Client.class("Assets.Core.Models.PlayerInventories.PlayerInventoriesModel")
-        const PlayerClass = Client.class("Assets.Core.Models.Users.Player");
-        const Inventories = Client.class("Assets.Core.Models.InventoryModels.Inventories");
-        const HealthController = Client.class("Assets.Core.Game.Battle.Gui.MainUI.HealthBar.HealthController");
+        const class_getters = new ObjectGetters();
+        await class_getters.doInitialSetup();
 
-        waitForPlayer().then((player) => {
-            console.log("Got the player object");
-            const Character = player.method<Il2Cpp.Object>("get_Character").invoke();
+        const game = new GamePlayer(class_getters);
+        await game.start();
 
-            const Inventories = Character.method<Il2Cpp.Object>("get_Inventories").invoke()
-            console.log("MY backpack limit", Inventories.method<number>("CellsCount").invoke());
-
-            setInterval(() => {
-                const Health = Character.tryField<Il2Cpp.Object>("_health")
-                if (Health && Health?.value.method<number>("GetAmount").invoke() < 40) {
-
-                    Character.method("Heal").invoke(100);
-                }
-                console.log("My health", Health?.value.method("GetAmount").invoke());
-            }, 1000);
-        });
+        // Il2Cpp.trace(true).domain().filterClasses((klass) => {
+        //     if (`${klass.namespace}.${klass.name}`.includes("Assets.Core.Game.Battle.Gui.MainUI")) return true;
+        //     return false;
+        // }).and().attach();
 
         Il2Cpp.trace(true)
-            .classes(
-            )
+            .classes()
             .filterMethods((method) => {
                 if (method.name === "GetNowTs") return false;
-                return method.name !== "get_TimeNow";
+                if (method.name === "get_TimeNow") return false;
+
+                return true;
             })
             .and()
             .attach();
-
     } catch (error) {
         send(error);
         console.error(error);
     }
 });
-
 
 recv("message", (message: any) => {
     if (message.type === "send") {
@@ -90,4 +218,4 @@ recv("message", (message: any) => {
         console.error(message.payload);
         return;
     }
-})
+});
