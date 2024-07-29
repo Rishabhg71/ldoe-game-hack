@@ -1,31 +1,36 @@
 import frida
+import signal
 import sys
+import asyncio
 
 def on_message(message, data):
     if message['type'] == 'send':
-        print(f"[+] {message['payload']}")
-    elif message['type'] == 'error':
-        print(f"[-] {message['stack']}")
+        print(message['payload'])
 
-# Connect to the device
-device = frida.get_usb_device()
+def handle_interrupt(signal, frame):
+    print("Script terminated by user")
+    sys.exit(0)
 
-# Spawn the application
-pid = device.spawn(["zombie.survival.craft.z"])
-session = device.attach(pid)
+# Register the signal handler for Ctrl + C
+signal.signal(signal.SIGINT, handle_interrupt)
 
-# Load the script
-with open("dist/agent.js", "r") as f:
-    script = session.create_script(f.read())
+with open('./dist/agent.js', 'r', encoding='utf-8') as file:
+    script = file.read()
 
-# Set up the message handler
-script.on("message", on_message)
-
-# Load the script
+process = frida.get_usb_device().attach('zombie.survival.craft.z', realm="emulated")
+script = process.create_script(script)
+script.on('message', on_message)
 script.load()
 
-# Resume the application
-device.resume(pid)
+async def main():
+    
+    while True:
+        command = input("Enter command:")
+        if command == "start":
+            res = await script.exports_async.startApp()
+            print(res)
 
-# Keep the script running
-sys.stdin.read()
+try:
+    asyncio.run(main())
+finally:
+    pass
