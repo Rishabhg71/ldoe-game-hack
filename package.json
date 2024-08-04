@@ -3,6 +3,7 @@
     "spawn": "frida -U -f zombie.survival.craft.z -l dist/agent.js --realm emulated",
     "attach": "frida -U -n zombie.survival.craft.z -l dist/agent.js --realm emulated --pause -t 6000",
     "watch": "frida-compile src/index.ts -o dist/agent.js -w",
+    "watch:test": "frida-compile src/test.ts -o dist/agent.js -w",
     "build": "frida-compile src/index.ts -o dist/agent.js -c",
     "start": "node dist/index.js"
   },

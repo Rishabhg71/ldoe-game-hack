@@ -172,3 +172,59 @@ recv("message", (message: any) => {
         return;
     }
 })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// let x = 0;
+// while (true && x > 50) {
+//     await wait(1000);
+//     if (player.getHealth() < 70) {
+//         player.heal();
+//     }
+//     x++;
+// }
+// resolve("done");
+// const player = ObjectGetters.waitForPlayer();
+// player.method<void>("Heal").invoke(90);
+// const position = player.method<void>("get_Position").invoke(90);
+// console.log("Player Position", position);
+
+// while (true) {
+
+//     await player.runForTiles("wd", 0.4);
+//     await player.runForTiles("wd", 3);
+//     send({ "hello": "world" },);
+//     await wait(1000);
+//     await new Promise((resolve) => {
+//         recv(function (data) {
+//             console.log("From server", data);
+//             resolve(data);
+//         });
+//     });
+//     await player.clickOn("use", 100);
+//     await wait(1000);
+//     await player.clickOn("put_all", 100);
+//     await wait(2000);
+//     await player.clickOn("close_inventory", 100);
+//     await wait(1000);
+
+//     if (x == 5) break
+//     x++;
+// }
+
+// await player.clickOn("take_all", 100);
+// await wait(1000);
+// await player.clickOn("put_all", 100);
+// console.log("ending click");

@@ -7,31 +7,26 @@ const TIMEOUT = 30000; // 30 seconds
 
 type DpadDirection = "w" | "a" | "s" | "d" | "wa" | "wd" | "sa" | "sd" | "stop";
 
+const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
 class ObjectGetters {
-    // @ts-ignore
-    public player: Il2Cpp.Object;
-    // @ts-ignore
-    public ui: Il2Cpp.Object;
 
-    public async doInitialSetup() {
-        this.player = await this.waitForPlayer();
-        this.ui = await this.waitForUi();
-    }
-    public getDpad() {
-        const dpad = this.ui.tryField<Il2Cpp.Object>("DpadController")?.value;
+    public static getDpad() {
+        const ui = ObjectGetters.waitForUi();
+        const dpad = ui.field<Il2Cpp.Object>("DpadController")?.value;
         if (!dpad) throw Error("dpad is null");
-
         return dpad;
     }
 
-    public async waitForPlayer(): Promise<
+    public static waitForPlayer(): 
         Il2Cpp.Object
-    > {
+    {
         const Client = Il2Cpp.domain.assembly("Client").image;
 
         const PlayerClass = Client.class("Assets.Core.Models.Users.Player");
 
         const arr = Il2Cpp.gc.choose(PlayerClass)
+        console.log("Number of instances of Assets.Core.Models.PlayerClass ->", arr.length);
+
         for (let index = 0; index < arr.length; index++) {
             const element = arr[index];
             return element;
@@ -39,49 +34,14 @@ class ObjectGetters {
         throw Error("PlayerObject not found");
 
     }
+    public static getCharacter():
+        Il2Cpp.Object {
 
-    public async waitForUi(): Promise<Il2Cpp.Object> {
-        
-        // const BattleUiController = Client.class(
-            //     "Assets.Core.Game.Battle.BattleUiController"
-            // );
-            
-            // // BattleUiController.fields.forEach((field) => { console.log(field.name) });
-            
-            // let battleUiController: Il2Cpp.Class | Il2Cpp.ValueType | Il2Cpp.Object | null = null;
-            
-            // BattleUiController.method("Update").implementation = function () {
-                //     if (!battleUiController) battleUiController = this;
-                //     return this.method("Update").invoke();
-                // };
-                
-                // return new Promise((resolve, reject) => {
-                    //     const interval = setInterval(() => {
-                        //         let str = "Assets.Core.Game.Battle.BattleUiController -> ";
-                        
-                        //         if (!battleUiController) return console.log(str + "null");
-                        //         const battleContainer =
-                        //             battleUiController.tryField<Il2Cpp.Object>("Container")?.value;
-                        //         str += "Assets.Core.Game.Battle.BattleUiContainer -> ";
-                        
-                        //         if (!battleContainer) return console.log(str + "null");
-                        //         const mainUiController =
-                        //             battleContainer?.tryField<Il2Cpp.Object>("MainUiController")?.value;
-                        //         str += "Assets.Core.Game.Battle.Gui.MainUI.MainUiController -> ";
-                        
-                        //         if (!mainUiController) return console.log(str + "null");
-                        //         const mainUiContainer =
-                        //             mainUiController.tryField<Il2Cpp.Object>("Container")?.value;
-                        
-                        //         if (!mainUiContainer) return console.log(str + "null");
-                        //         str += "Assets.Core.Game.Battle.Gui.MainUI.MainUiContainer";
-                        //         console.log(str);
-                        
-                        //         resolve(mainUiContainer);
-                        //         clearInterval(interval);
-                        //     }, 2000);
-                        // });
-                        
+        const player = ObjectGetters.waitForPlayer();
+        return player.method<Il2Cpp.Object>("get_Character").invoke();
+    }
+
+    public static waitForUi(): Il2Cpp.Object {
         const Client = Il2Cpp.domain.assembly("Client").image;
         const arr = Il2Cpp.gc.choose(Client.class("Assets.Core.Game.Battle.Gui.MainUI.MainUiContainer"))
         console.log("Number of instances of Assets.Core.Game.Battle.Gui.MainUI.MainUiContainer ->", arr.length);
@@ -91,58 +51,139 @@ class ObjectGetters {
         }
         throw Error("MainUiContainer not found");
     }
+
+    static getAllInventories() {
+        const Client = Il2Cpp.domain.assembly("Client").image;
+        // const chestClass = Client.tryClass("Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiController")
+        // const chestClass = Client.tryClass("Assets.Core.Models.InventoryModels.Inventories")
+        const chestClass = Client.tryClass("Assets.Core.Sync.Views.Inventories.ChestInventoryView")
+        if (!chestClass) throw Error("Inventories not found");
+
+        const arr = Il2Cpp.gc.choose(chestClass);
+        console.log(arr.length);
+        for (let index = 0; index < arr.length; index++) {
+            const element = arr[index];
+            // element.method<void>("Show").invoke();
+        }
+    }
+
+    static getPointerEvent() {
+        const PointerEventData = Il2Cpp.domain.assembly("UnityEngine.UI").image.class("UnityEngine.EventSystems.PointerEventData");
+        const pointerArr = Il2Cpp.gc.choose(PointerEventData);
+        for (let index = 0; index < pointerArr.length; index++) {
+            const element = pointerArr[index];
+            return element;
+        }
+        throw Error("PointerEvent not found");
+    }
+
+    static getAutoController() {
+        const Client = Il2Cpp.domain.assembly("Client").image;
+        const AutoUseController = Client.class("Assets.Core.Game.Battle.Gui.MainUI.Buttons.AutoUseController")
+
+        const arr = Il2Cpp.gc.choose(AutoUseController);
+        console.log("AutoUseController", arr.length);
+        for (let index = 0; index < arr.length; index++) {
+            const element = arr[index];
+            return element;
+            // element.method<void>("OnDown").invoke();
+        }
+        throw Error("AutoUseController not found");
+    }
+
+    static getUseButtonController() {
+        const Client = Il2Cpp.domain.assembly("Client").image;
+        const UseController = Client.class("Assets.Core.Game.Battle.Gui.MainUI.Buttons.UseController")
+
+        const arr = Il2Cpp.gc.choose(UseController);
+        console.log(arr.length);
+        for (let index = 0; index < arr.length; index++) {
+            const element = arr[index];
+            return element;
+            // element.method<void>("OnDown").invoke();
+        }
+        throw Error("UseController not found");
+    }
+
+    static getAttackController() {
+        const Client = Il2Cpp.domain.assembly("Client").image;
+        const AttackController = Client.class("Assets.Core.Game.Battle.Gui.MainUI.Buttons.AttackController")
+
+        const arr = Il2Cpp.gc.choose(AttackController);
+        console.log(arr.length);
+        for (let index = 0; index < arr.length; index++) {
+            const element = arr[index];
+            return element;
+        }
+        throw Error("AttackController not found");
+    }
+
+    public static getInventoryUI() {
+        const Client = Il2Cpp.domain.assembly("Client").image;
+        const InventoryUiContainer = Client.class("Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiContainer")
+
+        const arr = Il2Cpp.gc.choose(InventoryUiContainer);
+        for (let index = 0; index < arr.length; index++) {
+            const element = arr[index];
+            return element;
+        }
+        console.log('InventoryUiContainer not found');
+        throw Error("InventoryUiContainer not found");
+    }
+
 }
 
 
 class Character {
-    characterRef: Il2Cpp.Object;
-    object_getter: ObjectGetters;
+    player: Il2Cpp.Object;
+    character: Il2Cpp.Object;
 
-    constructor(character: Il2Cpp.Object, object_getter: ObjectGetters) {
-        this.characterRef = character;
-        this.object_getter = object_getter;
+    constructor() {
+        this.player = ObjectGetters.waitForPlayer();
+        this.character = ObjectGetters.getCharacter();
     }
     public getHealth() {
-        const Health = this.characterRef.tryField<Il2Cpp.Object>("_health")?.value
+        const Health = this.player.tryField<Il2Cpp.Object>("_health")?.value
         if (!Health) throw Error("Health is null");
         return Health.method<number>("GetAmount").invoke();
     }
 
     public getInventorySpace() {
-        const Inventories = this.characterRef.method<Il2Cpp.Object>("get_Inventories").invoke();
+        const Inventories = this.player.method<Il2Cpp.Object>("get_Inventories").invoke();
         return Inventories.method<number>("CellsCount").invoke()
     }
     public heal() {
-        this.characterRef.method<void>("Heal").invoke(90);
+        this.character.method<void>("Heal").invoke(90);
+    }
+
+    public async get_position() {
+        return this.character.method<Il2Cpp.Object>("get_Position").invoke();
+    }
+
+    public async move(direction: DpadDirection) {
+        this.character.method<void>("Move").invoke();
     }
 
     public async runFor(direction: DpadDirection, time: number) {
         this.run(direction);
-        await new Promise((resolve) => setTimeout(resolve, time));
+        await wait(time);
         console.log("Stopping Player");
-        const dpad = this.object_getter.getDpad()
+        const dpad = ObjectGetters.getDpad()
         dpad.method<void>("StopDpad").invoke();
-        // this.run("stop");
     }
-    // public async runForTiles(direction: DpadDirection, tiles: number) {
-    //     const TIME_FOR_ONE_TILE = 2000;
 
-    //     this.run(direction);
-    //     await new Promise((resolve) => setTimeout(resolve, time));
-    //     console.log("Stopping Player");
-    //     const dpad = this.object_getter.getDpad()
-    //     dpad.method<void>("StopDpad").invoke();
-    //     // this.run("stop");
-    // }
+    public async runForTiles(direction: DpadDirection, tiles: number) {
+        const TIME_FOR_ONE_TILE = 400;
+        await this.runFor(direction, TIME_FOR_ONE_TILE * tiles);
+    }
 
     public run(direction: DpadDirection) {
-        const dpad = this.object_getter.getDpad()
+        const dpad = ObjectGetters.getDpad()
 
-        const UnityEngine = Il2Cpp.domain.assembly("UnityEngine").image;
-
-        let Vector2 = UnityEngine.class("UnityEngine.Vector2").new();
-        Vector2.method<void>("Set").invoke(0.5, 0.5);
-        Vector2 = Vector2.method<Il2Cpp.Object>("get_normalized").invoke()
+        // const UnityEngine = Il2Cpp.domain.assembly("UnityEngine").image;
+        // let Vector2 = UnityEngine.class("UnityEngine.Vector2").alloc();
+        // Vector2.method<void>("Set").invoke(0.5, 0.5);
+        // Vector2 = Vector2.method<Il2Cpp.Object>("get_normalized").invoke()
 
         let cords = [0.0, 0.0];
         if (direction === "w") cords = [0.0, 1.0];
@@ -155,95 +196,138 @@ class Character {
         if (direction === "sd") cords = [1.0, -1.0];
         if (direction === "stop") cords = [0, 0];
 
-        Vector2.method<void>("Set").invoke(cords[0], cords[1]);
-        dpad.method<void>("Run").invoke(Vector2, 0.9);
+        const vector = dpad.field<Il2Cpp.Object>("_defaultPos").value;
+        vector.method<void>("Set").invoke(cords[0], cords[1]);
+        // console.log(dpad.class);
+        const method = dpad.method<void>("Run");
+        // Il2Cpp.delegate("UnityEngine.Events.UnityAction")
+        // console.log(method.parameters[1].name);
+        // method.invoke(vector, 1);
+        // Il2Cpp.corlib
+    }
+    // public async clickOn(button: "attack" | "auto" | "use" | "take_all" | "put_all" | "close_inventory", time: number = 100) {
+    //     if (button === "attack") {
+    //         const attackController = ObjectGetters.getAttackController();
+    //         attackController.method<void>("OnDown").invoke(this.pointerEvent)
+    //         await wait(time);
+    //         attackController.method<void>("OnUp").invoke(this.pointerEvent)
+    //     }
+
+    //     if (button === "auto") {
+    //         const autoUseController = ObjectGetters.getAutoController();
+    //         autoUseController.method<void>("OnDown").invoke(this.pointerEvent)
+    //         await wait(time);
+    //         autoUseController.method<void>("OnUp").invoke(this.pointerEvent)
+    //     }
+    //     if (button === "use") {
+    //         const useController = ObjectGetters.getUseButtonController();
+    //         useController.method<void>("OnDown").invoke(this.pointerEvent)
+    //         await wait(time);
+    //         useController.method<void>("OnUp").invoke(this.pointerEvent)
+    //     }
+    //     if (button === "take_all") {
+    //         const InventoryUi = ObjectGetters.getInventoryUI();
+    //         const take_all_button = InventoryUi.field<Il2Cpp.Object>("TakeAllButton").value
+    //         take_all_button.method<void>("OnDown").invoke(this.pointerEvent)
+    //         await wait(time);
+    //         take_all_button.method<void>("OnUp").invoke(this.pointerEvent)
+    //     }
+    //     if (button === "put_all") {
+    //         const InventoryUi = ObjectGetters.getInventoryUI();
+    //         const put_all_button = InventoryUi.field<Il2Cpp.Object>("PutAllButton").value
+    //         put_all_button.method<void>("OnDown").invoke(this.pointerEvent)
+    //         await wait(time);
+    //         put_all_button.method<void>("OnUp").invoke(this.pointerEvent)
+    //     }
+
+    //     if (button === "close_inventory") {
+    //         const InventoryUi = ObjectGetters.getInventoryUI();
+    //         const close = InventoryUi.field<Il2Cpp.Object>("CloseButton").value
+    //         close.method<void>("Press").invoke()
+    //         await wait(time);
+    //         // close.method<void>("OnUp").invoke(pointerEvent)
+    //     }
+    // }
+
+    public teleport(x: number, y: number, z: number) {
+    // const playerRotationVector3 = this.character.method<Il2Cpp.Object>("get_Rotation").invoke();
+    // this.character.method<void>("Move").invoke(playerPositionVector3, playerRotationVector3, true, false);
+
+        const playerPositionVector3 = this.character.method<Il2Cpp.Object>("get_Position").invoke();
+        playerPositionVector3.field<number>("x").value = x;
+        playerPositionVector3.field<number>("y").value = y;
+        playerPositionVector3.field<number>("z").value = z;
+        this.character.method<void>("SetPosition").invoke(playerPositionVector3, true, false);
+    }
+
+    public async getAllInventories() {
+        // ObjectGetters.getAllInventories();
+        ObjectGetters.getAutoController();
     }
 }
 
-class GamePlayer {
-    object_getters: ObjectGetters;
-    character: Character;
 
-    constructor(object_getters: ObjectGetters) {
-        this.object_getters = object_getters;
-
-        const characterRef = this.object_getters.player.method<Il2Cpp.Object>("get_Character").invoke();
-        const character = new Character(characterRef, object_getters)
-        this.character = character;
-    }
-
-    public async start() {
-        // this.character.run("wa");
-        await this.character.runFor("wd", 1000);
-
-        // setInterval(() => {
-        //     const health = this.character.getHealth();
-        //     if (health < 40) {
-        //         // this.character.heal();
-        //     }
-        //     console.log("My health", this.character.getHealth());
-        // }, 1000);
-
-    }
+const LOCATIONS = {
+    "CHEST_1": [-7.09, 0.21, -11.84],
+    "CHEST_2": [-5.04, 0.21, -11.75],
+    "CHEST_3": [-3.07, 0.21, -11.74],
+    "CHEST_4": [-1.08, 0.21, -11.76],
+    "CHEST_5": [0.74, 0.21, -11.58],
 }
+type Location = keyof typeof LOCATIONS;
 
+const click = () => {
+    return new Promise((resolve) => {
+        Il2Cpp.perform(async () => {
+            const player = new Character();
+
+            const keys = Object.keys(LOCATIONS)
+
+            for (let index = 0; index < keys.length; index++) {
+                const key = keys[index];
+
+                const location = LOCATIONS[key as Location];
+                player.teleport(location[0], location[1], location[2]);
+                await wait(3000);
+
+            }
+            resolve("done");
+        });
+    });
+}
 
 const start = () => {
     return new Promise((resolve) => {
         Il2Cpp.perform(async () => {
-            console.log(
-                "libil2cpp.so loaded, performing Il2Cpp operations...",
-                Il2Cpp.unityVersion
-            );
-            try {
-        
-                const class_getters = new ObjectGetters();
-                await class_getters.doInitialSetup();
-        
-                const game = new GamePlayer(class_getters);
-                await game.start();
-                
-                resolve("done");
-                // const Client = Il2Cpp.domain.assembly("Client").image;
-        
-                // const class_getters = new ObjectGetters();
-                // await class_getters.doInitialSetup();
-        
-                // const game = new GamePlayer(class_getters);
-                // await game.start();
-        
-                // Il2Cpp.trace(true).domain().filterClasses((klass) => {
-                //     if (`${klass.namespace}.${klass.name}`.includes("Assets.Core.Game.Battle.Gui.MainUI")) return true;
-                //     return false;
-                // }).and().attach();
-        
-                Il2Cpp.trace(true)
-                    .classes()
-                    .filterMethods((method) => {
-                        if (method.name === "GetNowTs") return false;
-                        if (method.name === "get_TimeNow") return false;
-        
-                        return true;
-                    })
-                    .and()
-                    .attach();
-            } catch (error) {
-                send(error);
-                console.error(error);
+
+            const player = new Character();
+            const Client = Il2Cpp.domain.assembly("Client").image;
+            const arr = Il2Cpp.gc.choose(Client.class("Assets.Core.Models.Users.LocationObject.LocationObjectModel"))
+            console.log(arr.length, "LocationObjectModel");
+
+            for (let index = 0; index < arr.length; index++) {
+                const element = arr[index];
+                // @ts-ignore
+                const uid = String(element.method<Il2Cpp.Object>("get_LocationObjectId").invoke()).replaceAll('"', "");
+                console.log(uid);
+                if (uid === "") {
+                    try {
+                        const use = player.character.method<boolean>("CallUse").invoke(element);
+                        console.log(element, use);
+                    }
+                    catch (error) {
+                        console.log("Error", error);
+                    }
+                }
             }
+            resolve("done");
         });
     });
 }
 
 
-// recv("message", (message: any) => {
-//     if (message.type === "send") {
-//         // fs.appendFileSync(path.join(__dirname, "output.txt"), message.payload, 'utf8');
-//         console.error(message.payload);
-//         return;
-//     }
-// });
 
 rpc.exports = {
-    startapp: start
+    click: click,
+    start: start
 }
