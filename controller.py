@@ -116,13 +116,14 @@ class Controller:
         thread.start()
         return thread
 
-    async def double_click_for_inventory(self, row:int, col:int):
+    def double_click_for_inventory(self, row:int, col:int):
         CELL1_CENTER = (150, 165)
         CELL_HALF_LENGTH = (210 - 90)
         X = CELL1_CENTER[0] + (CELL_HALF_LENGTH * row)
         Y = CELL1_CENTER[1] + (CELL_HALF_LENGTH * col)
+        print(X, Y, "DSDSD", row, col)
         def tap(x, y):
-            self.device.shell(f"input tap {X} {Y}")
+            self.device.shell(f"input tap {x} {y}")
 
         thread1 = self.run_in_thread(tap, X, Y)
         thread2 = self.run_in_thread(tap, X, Y)

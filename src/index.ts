@@ -16,6 +16,12 @@ type BackpackItemsWithIndex = {
 };
 
 
+const cellIndexToCords = (index: number) => {
+    const x = index % 5;
+    const y = Math.floor(index / 5) + 1;
+    return [x, y];
+}
+
 const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
 class ObjectGetters {
 
@@ -402,7 +408,7 @@ type Location = keyof typeof LOCATIONS;
 
 const executeEvent = (event: ControlEvents, args: string[] = []) => {
     return new Promise((resolve) => {
-        console.log("[CLIENT] Executing Event", event);
+        console.log("[CLIENT] Executing Event", event, args);
         send({ event: event, args: args });
         recv(event, () => {
             console.log("[CLIENT] Event Executed", event);
@@ -466,9 +472,10 @@ const test = () => {
             const items = player.getInventoryItemsAndIndex()
             // console.log(Object.keys(items));
             for (const key in items) {
-                if (items[key].itemName === "resource_plank_1" && items[key].amount > 15) {
-                    await executeEvent("dbl_click_inventory", [key]);
-                    console.log("resource_plank_1", key);
+
+                if (items[key].itemName === "resource_charcoal" && items[key].amount > 15) {
+                    const [row, col] = cellIndexToCords(Number(key));
+                    await executeEvent("dbl_click_inventory", [String(row), String(col)]);
                 }
             }
             // console.log("[CLIENT]Number Assets.Core.Game.Dialogs.Inventory.InventoryCellProxyController ->", arr1.length);

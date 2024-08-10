@@ -42,7 +42,8 @@ class Server:
         
         raise Exception("No item was picked")
 
-    async def on_message(self, message, data):
+
+    def on_message(self, message, data):
         if message['type'] == "error":
             print(message)
             return
@@ -68,10 +69,10 @@ class Server:
             self.craft_item(item_name)
         
         if event == "dbl_click_inventory":
-            row = payload["args"][0]
-            col = payload["args"][0]
-            await self.control.double_click_for_inventory(int(row), int(col))
-
+            row = int(payload["args"][0]) - 1
+            col = int(payload["args"][1]) - 1
+            self.control.double_click_for_inventory(row, col)
+        
         if event == "run":
             direction = payload["args"][0]
             times = payload["args"][1]
