@@ -1,3 +1,5 @@
+import json
+from typing import Literal
 import frida
 import signal
 import sys
@@ -5,6 +7,8 @@ import asyncio
 import win32gui
 import win32con
 import time
+
+from controller import Controller
 
 def handle_interrupt(signal, frame):
     print("Script terminated by user")
@@ -14,34 +18,75 @@ def handle_interrupt(signal, frame):
 signal.signal(signal.SIGINT, handle_interrupt)
 
 
-process = frida.get_usb_device().attach('zombie.survival.craft.z', realm="emulated")
+device = frida.get_usb_device()
 
-class Controller:
-    def __init__(self) -> None:
-        # self.hwnd = win32gui.FindWindow(None, "dnplayer.exe dnplayer.exe (32 bit) - Search - Brave")  # Replace with your application's window title
-        self.hwnd = win32gui.FindWindow(None, "*bluestacks.conf - Notepad")  # Replace with your application's window title
-        # self.hwnd = win32gui.(None, "Untitled - Notepad")  # Replace with your application's window title
-        if self.hwnd == 0:
-            raise Exception("Dint find that window")
-
-    def send_key(self, key):
-        win32gui.PostMessage(self.hwnd, win32con.WM_KEYDOWN, key, 0)
-        time.sleep(0.05)
-        win32gui.PostMessage(self.hwnd, win32con.WM_KEYUP, key, 0)
-
-
-    def click_on(self, button: str, time: float):
-        pass
+# process = device.attach('zombie.survival.craft.z', realm="emulated")
+process = device.attach('Last Day On Earth: Survival', realm="emulated")
 
 class Server:
     script: frida.core.Script
+    control: Controller
     def __init__(self) -> None:
-        pass
+        self.control = Controller()
     
-    def on_message(self, message, data):
-        print("Message", message)
-        self.script.post("message")
+    def craft_item(self, name: Literal['hatchet', "pickaxe"]):
+        if name == "pickaxe":
+            self.control.craft_pickaxe()
+            self.control.press_craft_button()
+            return
+        if name == "hatchet":
+            self.control.craft_hatchet()
+            time.sleep(1)
+            self.control.press_craft_button()
+            return
+        
+        raise Exception("No item was picked")
+
+    async def on_message(self, message, data):
+        if message['type'] == "error":
+            print(message)
+            return
+        payload = message["payload"]
+        event = payload['event']
+        print(f"[SERVER] executing event {event}")
+        if event == "close_inventory":
+            self.control.press_close_panel()
+        if event == "use":
+            self.control.press_use()
+        if event == "put_all":
+            self.control.press_put_all()
+        if event == "take_all":
+            self.control.press_take_all()
+        if event == "auto":
+            self.control.press_auto()
+        
+        if event == "craft_button":
+            self.control.press_craft_button()
+        if event == "craft_item":
+            item_name = payload["args"][0]
+            print(item_name)
+            self.craft_item(item_name)
+        
+        if event == "dbl_click_inventory":
+            row = payload["args"][0]
+            col = payload["args"][0]
+            await self.control.double_click_for_inventory(int(row), int(col))
+
+        if event == "run":
+            direction = payload["args"][0]
+            times = payload["args"][1]
+            for i in range(int(times)):
+                self.control.run(direction)
+
+        print(f"[SERVER] Responding back to client to event: {event}")
+        self.script.post({"type": event})
     
+    # def on_message(self, message, data):
+    #     # payload = message["payload"]
+    #     print(message)
+    #     print(f"[SERVER] Responding back to client")
+    #     self.script.post({"type": "poke"})
+            
     
     def create_script(self):
         with open('./dist/agent.js', 'r', encoding='utf-8') as file:
@@ -59,11 +104,19 @@ async def main():
         script.load()
         if command == "click":
             # res = script.exports_sync.click()
-            res = await script.exports_async.click()
+            res = script.exports_sync.click()
             # print(res)
 
         if command == "start":
             res = await script.exports_async.start()
+            print(res)
+
+        if command == "test":
+            res = await script.exports_async.test()
+            print(res)
+
+        if command == "hook":
+            res = script.exports_sync.hook()
             print(res)
 
 try:
