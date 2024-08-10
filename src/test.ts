@@ -10,7 +10,7 @@ Il2Cpp.perform(() => {
             // if (klass.fullName.includes("Workbench")) return true;
             // if (klass.fullName.includes("Cell")) return true;
             if (klass.fullName.includes("Inventory")) return true;
-
+            s
             if (klass.fullName.includes("WorkbenchInventoryStackReward")) return false;
             if (klass.fullName.includes("WorkbenchHasFreeSkipsRequirement")) return false;
             if (klass.fullName.includes("Assets.Core.Game.Dialogs.Inventory.StatsDialog")) return false;
