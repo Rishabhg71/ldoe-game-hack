@@ -72,6 +72,11 @@ class Server:
             row = int(payload["args"][0]) - 1
             col = int(payload["args"][1]) - 1
             self.control.double_click_for_inventory(row, col)
+
+        if event == "double_click_final_products":
+            row = int(payload["args"][0]) - 1
+            col = int(payload["args"][1]) - 1
+            self.control.double_click_final_products()
         
         if event == "run":
             direction = payload["args"][0]

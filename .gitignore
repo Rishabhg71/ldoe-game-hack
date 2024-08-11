@@ -3,3 +3,4 @@ dist/*
 DummyDll/*
 __handlers__/*
 frida-server
+__pycache__/*

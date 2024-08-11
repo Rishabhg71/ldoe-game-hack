@@ -19,6 +19,7 @@ BUTTON_LOCATIONS = {
     "CLOSE_PANEL": (1540, 150),
     "CRAFT_HATCHET_LOCATION": (180, 230),
     "CRAFT_PICKAXE_LOCATION": (340, 230),
+    "FIANL_PRODUCTS": (1220, 480),
     "DPAD_CENTER": (200, 700),
     "DPAD_W": (200, 600),
     "DPAD_A": (100, 700),
@@ -122,6 +123,16 @@ class Controller:
         X = CELL1_CENTER[0] + (CELL_HALF_LENGTH * row)
         Y = CELL1_CENTER[1] + (CELL_HALF_LENGTH * col)
         print(X, Y, "DSDSD", row, col)
+        def tap(x, y):
+            self.device.shell(f"input tap {x} {y}")
+
+        thread1 = self.run_in_thread(tap, X, Y)
+        thread2 = self.run_in_thread(tap, X, Y)
+        thread1.join()
+        thread2.join()
+
+    def double_click_final_products(self):
+        X, Y = BUTTON_LOCATIONS["FIANL_PRODUCTS"]
         def tap(x, y):
             self.device.shell(f"input tap {x} {y}")
 

@@ -6,7 +6,7 @@ console.log("[CLIENT]Frida Loaded Successfully");
 const TIMEOUT = 30000; // 30 seconds
 
 type DpadDirection = "w" | "a" | "s" | "d" | "wa" | "wd" | "sa" | "sd" | "stop";
-type ControlEvents = "attack" | "auto" | "use" | "take_all" | "put_all" | "close_inventory" | "run" | "craft_button" | "craft_item" | "dbl_click_inventory";
+type ControlEvents = "attack" | "auto" | "use" | "take_all" | "put_all" | "close_inventory" | "run" | "craft_button" | "craft_item" | "dbl_click_inventory" | "double_click_final_products";
 type LocationNames = "home" | "Trees_01_1";
 type BackpackItems = {
     [key: string]: { amount: number, object: Il2Cpp.Object[] },
@@ -389,19 +389,39 @@ class Character {
             element.method<void>("EnterLocation").invoke();
         }
     }
+
+    public async putItemsForProcessing(itemName: string, tableLocation: Location, items: BackpackItemsWithIndex) {
+        this.teleport(LOCATIONS[tableLocation][0], LOCATIONS[tableLocation][1], LOCATIONS[tableLocation][2])
+        await wait(3000);
+        await executeEvent("use");
+        await wait(2000);
+
+        const itemRowCol = getRowColumnForItem(itemName, items)
+        if (itemRowCol) await executeEvent("dbl_click_inventory", itemRowCol);
+
+        await wait(1000);
+        executeEvent("close_inventory");
+        await wait(2000);
+    }
 }
 
 
 const CHEST_LOCATIONS = {
-    "CHEST_1": [-7.09, 0.21, -11.84],
-    "CHEST_2": [-5.04, 0.21, -11.75],
-    "CHEST_3": [-3.07, 0.21, -11.74],
-    "CHEST_4": [-1.08, 0.21, -11.76],
-    "CHEST_5": [0.74, 0.21, -11.58],
+    "CHEST_1": [12.23, 0.21, -3.02],
+    "CHEST_2": [12.33, 0.21, -5.05],
+    "CHEST_3": [12.43, 0.21, -7.05],
+    "CHEST_4": [12.47, 0.21, -9.17],
+    "CHEST_5": [12.24, 0.21, -11.16],
 }
 const LOCATIONS = {
     HOME_MAP_TOP_RIGHT: [19.72, 0.01, -19.88],
     TREES_MAP_TOP_RIGHT: [29.86, 0.01, -30.00],
+    FARM_LAND_1: [-10.00, 0.01, -0.29],
+    FARM_LAND_2: [-10.06, 0.01, 3.50],
+    WORKBENCH_1: [12.27, 0.21, 0.82],
+    WORKBENCH_2: [12.28, 0.21, -0.98],
+    CAMPFIRE_1: [16.14, 0.01, -2.97],
+    CAMPFIRE_2: [16.14, 0.01, -5.08],
 }
 type ChestLocation = keyof typeof CHEST_LOCATIONS;
 type Location = keyof typeof LOCATIONS;
@@ -417,41 +437,57 @@ const executeEvent = (event: ControlEvents, args: string[] = []) => {
     });
 }
 
+const getRowColumnForItem = (itemName: string, items: BackpackItemsWithIndex) => {
+    for (const key in items) {
+        if (items[key].itemName === itemName) {
+            const [x, y] = cellIndexToCords(Number(key));
+            return [String(x), String(y)];
+        }
+    }
+    return null;
+}
+
+
 const start = () => {
     return new Promise((resolve) => {
         Il2Cpp.perform(async () => {
             const player = new Character();
 
+            // player.teleport(LOCATIONS.HOME_MAP_TOP_RIGHT[0], LOCATIONS.HOME_MAP_TOP_RIGHT[1], LOCATIONS.HOME_MAP_TOP_RIGHT[2]);
+            // await wait(3000);
+            // await executeEvent("run", ["WD", "5"]);
+            // await wait(3000);
+            // await player.moveToLocation("Trees_01_1");
+            // console.log("[CLIENT] Now we can wait for player to reach the location");
+
+            // await executeEvent("auto");
+            // await player.farmUntilFull();
+
+            // player.teleport(LOCATIONS.TREES_MAP_TOP_RIGHT[0], LOCATIONS.TREES_MAP_TOP_RIGHT[1], LOCATIONS.TREES_MAP_TOP_RIGHT[2]);
+            // await wait(3000);
+            // await executeEvent("run", ["WD", "5"]);
+            // await wait(10000);
+            // await player.moveToLocation("home");
+
             const keys = Object.keys(CHEST_LOCATIONS)
+            const items = player.getInventoryItemsAndIndex();
 
-            for (let index = 0; index < keys.length; index++) {
-                const key = keys[index];
+            await player.putItemsForProcessing("wood", "WORKBENCH_1", items);
+            await player.putItemsForProcessing("wood", "WORKBENCH_2", items);
 
-                const location = CHEST_LOCATIONS[key as ChestLocation];
-                player.teleport(location[0], location[1], location[2]);
-                await wait(3000);
-                await executeEvent("use");
-                await wait(2000);
-                await executeEvent("put_all");
-                await wait(2000);
-                await executeEvent("close_inventory");
-                await wait(1000);
-            }
-            player.teleport(LOCATIONS.HOME_MAP_TOP_RIGHT[0], LOCATIONS.HOME_MAP_TOP_RIGHT[1], LOCATIONS.HOME_MAP_TOP_RIGHT[2]);
-            await wait(3000);
-            await executeEvent("run", ["WD", "5"]);
-            await wait(3000);
-            await player.moveToLocation("Trees_01_1");
-            console.log("[CLIENT] Now we can wait for player to reach the location");
+            // for (let index = 0; index < keys.length; index++) {
+            //     const key = keys[index];
 
-            await executeEvent("auto");
-            await player.farmUntilFull();
-
-            player.teleport(LOCATIONS.TREES_MAP_TOP_RIGHT[0], LOCATIONS.TREES_MAP_TOP_RIGHT[1], LOCATIONS.TREES_MAP_TOP_RIGHT[2]);
-            await wait(3000);
-            await executeEvent("run", ["WD", "5"]);
-            await wait(10000);
-            await player.moveToLocation("home");
+            //     const location = CHEST_LOCATIONS[key as ChestLocation];
+            //     player.teleport(location[0], location[1], location[2]);
+            //     await wait(3000);
+            //     await executeEvent("use");
+            //     await wait(2000);
+            //     await executeEvent("put_all");
+            //     await wait(2000);
+            //     await executeEvent("close_inventory");
+            //     await wait(1000);
+            // }
 
 
             resolve("done");
@@ -467,23 +503,25 @@ const test = () => {
             // const Client = Il2Cpp.domain.assembly("Client").image;
 
             const player = new Character();
-            console.log("[CLIENT] Health", player.getHealth());
+            // console.log("[CLIENT] Health", player.getHealth());
 
-            const items = player.getInventoryItemsAndIndex()
-            // console.log(Object.keys(items));
-            for (const key in items) {
+            // const items = player.getInventoryItemsAndIndex()
+            // // console.log(Object.keys(items));
+            // for (const key in items) {
 
-                if (items[key].itemName === "resource_charcoal" && items[key].amount > 15) {
-                    const [row, col] = cellIndexToCords(Number(key));
-                    await executeEvent("dbl_click_inventory", [String(row), String(col)]);
-                }
-            }
+            //     if (items[key].itemName === "resource_charcoal" && items[key].amount > 15) {
+            //         const [row, col] = cellIndexToCords(Number(key));
+            //         await executeEvent("dbl_click_inventory", [String(row), String(col)]);
+            //     }
+            // }
+
+            // await executeEvent("double_click_final_products");
             // console.log("[CLIENT]Number Assets.Core.Game.Dialogs.Inventory.InventoryCellProxyController ->", arr1.length);
 
 
             // const player = new Character();
-            // const position = player.get_position();
-            // console.log("[CLIENT] Position", position);
+            const position = player.get_position();
+            console.log("[CLIENT] Position", position);
             // send({ event: "position", data: position });
             resolve(true);
         });
