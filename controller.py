@@ -2,7 +2,6 @@ import asyncio
 import threading
 import time
 from typing import Literal
-from ppadb.client import Client as AdbClient
 
 BUTTON_LOCATIONS = {
     "AUTO": (50, 840),
