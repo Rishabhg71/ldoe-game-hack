@@ -114,7 +114,6 @@ class Controller:
 
     def run_in_thread(self, func, *args, **kwargs):
         thread = threading.Thread(target=func, args=args, kwargs=kwargs)
-        thread.start()
         return thread
 
     def double_click_for_inventory(self, row:int, col:int):
@@ -125,9 +124,14 @@ class Controller:
         print(X, Y, "DSDSD", row, col)
         def tap(x, y):
             self.device.shell(f"input tap {x} {y}")
-
+        
+        tap(X, Y)
+        time.sleep(0.5)
         thread1 = self.run_in_thread(tap, X, Y)
         thread2 = self.run_in_thread(tap, X, Y)
+
+        thread1.start()
+        thread2.start()
         thread1.join()
         thread2.join()
 
@@ -136,8 +140,14 @@ class Controller:
         def tap(x, y):
             self.device.shell(f"input tap {x} {y}")
 
+        tap(X, Y)
+        time.sleep(0.5)
+
+
         thread1 = self.run_in_thread(tap, X, Y)
         thread2 = self.run_in_thread(tap, X, Y)
+        thread1.start()
+        thread2.start()
         thread1.join()
         thread2.join()
         # time.sleep()

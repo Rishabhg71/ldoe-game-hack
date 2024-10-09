@@ -5,8 +5,8 @@ console.log("[CLIENT]Frida Loaded Successfully");
 
 const TIMEOUT = 30000; // 30 seconds
 
-type DpadDirection = "w" | "a" | "s" | "d" | "wa" | "wd" | "sa" | "sd" | "stop";
-type ControlEvents = "attack" | "auto" | "use" | "take_all" | "put_all" | "close_inventory" | "run" | "craft_button" | "craft_item" | "dbl_click_inventory" | "double_click_final_products";
+type DpadDirection = "W" | "A" | "S" | "D" | "WA" | "WD" | "SA" | "SD";
+type ControlEvents = "attack" | "auto" | "use" | "take_all" | "put_all" | "close_inventory" | "run" | "craft_button" | "craft_item" | "dbl_click_inventory" | "double_click_final_products" | "double_click_final_products";
 type LocationNames = "home" | "Trees_01_1";
 type BackpackItems = {
     [key: string]: { amount: number, object: Il2Cpp.Object[] },
@@ -45,6 +45,20 @@ class ObjectGetters {
             if (String(name).replaceAll('"', "") === place) {
                 return element.field<Il2Cpp.Object>("_locationDescription").value;
             }
+        }
+        throw Error("Location you tried to select is not found");
+    }
+
+    public static getInventoryHandler() {
+        // Will get the first instance of the InventoryHandler and then we can access the ChestInventory
+        const Client = Il2Cpp.domain.assembly("Client").image;
+        const GlobalMapPointController = Client.class("Assets.Core.Game.Dialogs.Inventory.InventoryHandler");
+        const arr1 = Il2Cpp.gc.choose(GlobalMapPointController);
+        console.log("[CLIENT]Number Assets.Core.Game.Dialogs.Inventory.InventoryHandler ->", arr1.length);
+
+        for (let index = 0; index < arr1.length; index++) {
+            const element = arr1[index];
+            return element;
         }
         throw Error("Location you tried to select is not found");
     }
@@ -109,107 +123,84 @@ class ObjectGetters {
         throw Error("MainUiContainer not found");
     }
 
-    static getAllInventories() {
-        const Client = Il2Cpp.domain.assembly("Client").image;
-        // const chestClass = Client.tryClass("Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiController")
-        // const chestClass = Client.tryClass("Assets.Core.Models.InventoryModels.Inventories")
-        const chestClass = Client.tryClass("Assets.Core.Sync.Views.Inventories.ChestInventoryView")
-        if (!chestClass) throw Error("Inventories not found");
-
-        const arr = Il2Cpp.gc.choose(chestClass);
-        console.log(arr.length);
-        for (let index = 0; index < arr.length; index++) {
-            const element = arr[index];
-            // element.method<void>("Show").invoke();
-        }
-    }
-
-    static getPointerEvent() {
-        const PointerEventData = Il2Cpp.domain.assembly("UnityEngine.UI").image.class("UnityEngine.EventSystems.PointerEventData");
-        const pointerArr = Il2Cpp.gc.choose(PointerEventData);
-        for (let index = 0; index < pointerArr.length; index++) {
-            const element = pointerArr[index];
-            return element;
-        }
-        throw Error("PointerEvent not found");
-    }
-
-    static getAutoController() {
-        const Client = Il2Cpp.domain.assembly("Client").image;
-        const AutoUseController = Client.class("Assets.Core.Game.Battle.Gui.MainUI.Buttons.AutoUseController")
-
-        const arr = Il2Cpp.gc.choose(AutoUseController);
-        console.log("[CLIENT][CLIENT]AutoUseController", arr.length);
-        for (let index = 0; index < arr.length; index++) {
-            const element = arr[index];
-            return element;
-            // element.method<void>("OnDown").invoke();
-        }
-        throw Error("AutoUseController not found");
-    }
-
-    static getUseButtonController() {
-        const Client = Il2Cpp.domain.assembly("Client").image;
-        const UseController = Client.class("Assets.Core.Game.Battle.Gui.MainUI.Buttons.UseController")
-
-        const arr = Il2Cpp.gc.choose(UseController);
-        console.log(arr.length);
-        for (let index = 0; index < arr.length; index++) {
-            const element = arr[index];
-            return element;
-            // element.method<void>("OnDown").invoke();
-        }
-        throw Error("UseController not found");
-    }
-
-    static getAttackController() {
-        const Client = Il2Cpp.domain.assembly("Client").image;
-        const AttackController = Client.class("Assets.Core.Game.Battle.Gui.MainUI.Buttons.AttackController")
-
-        const arr = Il2Cpp.gc.choose(AttackController);
-        console.log(arr.length);
-        for (let index = 0; index < arr.length; index++) {
-            const element = arr[index];
-            return element;
-        }
-        throw Error("AttackController not found");
-    }
-
-    public static getInventoryUI() {
-        const Client = Il2Cpp.domain.assembly("Client").image;
-        const InventoryUiContainer = Client.class("Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiContainer")
-
-        const arr = Il2Cpp.gc.choose(InventoryUiContainer);
-        for (let index = 0; index < arr.length; index++) {
-            const element = arr[index];
-            return element;
-        }
-        console.log('InventoryUiContainer not found');
-        throw Error("InventoryUiContainer not found");
-    }
-
 }
 
 
-class Character {
-    player: Il2Cpp.Object;
-    character: Il2Cpp.Object;
-    inventories: Il2Cpp.Object;
-
-    constructor() {
-        this.player = ObjectGetters.waitForPlayer();
-        this.character = ObjectGetters.getCharacter();
-        this.inventories = this.character.method<Il2Cpp.Object>("get_Inventories").invoke();
+class Controllor {
+    public static async run(direction: DpadDirection, times: number = 1) {
+        await wait(1000);
+        await executeEvent("run", [direction, times]);
+        await wait(1000);
     }
-    public getHealth() {
-        const Health = this.character.field<Il2Cpp.Object>("_health")?.value
-        return Health.method<number>("GetAmount").invoke();
+    public static async pressUse() {
+        await executeEvent("use");
+    }
+    static async getRowColumnForItem(itemName: string, items: BackpackItemsWithIndex) {
+        for (const key in items) {
+            if (items[key].itemName === itemName) {
+                const x = Number(key) % 5;
+                const y = Math.floor(Number(key) / 5) + 1;
+                return [x, y];
+            }
+        }
+        return [null, null];
+    }
+    public static async dblClickOnCell(row: number, col: number) {
+        await executeEvent("dbl_click_inventory", [row, col]);
+    }
+
+    public static async closePanel() {
+        await executeEvent("close_inventory");
+    }
+    public static async pressAuto() {
+        await executeEvent("auto")
+    }
+    public static async dblClickOnOutputCell() {
+        await executeEvent("double_click_final_products")
+    }
+}
+
+class Inventory {
+    inventories: Il2Cpp.Object;
+    character: Il2Cpp.Object;
+
+    constructor(character: Il2Cpp.Object) {
+        this.character = character;
+        this.inventories = this.character.method<Il2Cpp.Object>("get_Inventories").invoke();
     }
 
     public getBackpackSpace() {
         return this.inventories.method<number>("CellsCount").invoke()
     }
-    public getInventoryItems(): [BackpackItems, number] {
+
+    public getChestItems(): { items: BackpackItemsWithIndex, handler: Il2Cpp.Object } {
+        const handler = ObjectGetters.getInventoryHandler();
+        const ChestInventory = handler.field<Il2Cpp.Object>("_lootInventories").value;
+
+        const partsList = ObjectGetters.listToGenerator(ChestInventory.method<Il2Cpp.Object>("get_InventoryParts").invoke())
+
+        const ret: BackpackItemsWithIndex = {}
+        let ItemIndex = 1;
+        for (const parts of partsList) {
+            // console.log(parts.method<Il2Cpp.String>("get_Id").invoke());
+
+            const partsCellList = ObjectGetters.listToGenerator(parts.method<Il2Cpp.Object>("get_Cells").invoke())
+            for (const cell of partsCellList) {
+                // const ItemIndex = cell.method<number>("get_CellIndex").invoke() + 1
+                if (!cell.method<Il2Cpp.Object>("IsEmpty").invoke()) {
+                    const InventoryStack = cell.method<Il2Cpp.Object>("get_Stack").invoke()
+                    const ItemName = InventoryStack.method<Il2Cpp.String>("get_Id").invoke().toString().replaceAll('"', "")
+                    ret[ItemIndex] = { amount: InventoryStack.method<number>("GetAmount").invoke(), object: InventoryStack, itemName: ItemName }
+                } else {
+                    ret[ItemIndex] = { amount: 0, object: cell, itemName: "" }
+                }
+                ItemIndex++;
+            }
+        }
+        return { items: ret, handler: handler };
+    }
+
+    public getBackpackItems(): [BackpackItems, number] {
 
         const partsList = ObjectGetters.listToGenerator(this.inventories.method<Il2Cpp.Object>("get_InventoryParts").invoke())
 
@@ -235,6 +226,7 @@ class Character {
         }
         return [ret, NonEmptyCells];
     }
+
     public getInventoryItemsAndIndex(): BackpackItemsWithIndex {
 
         const partsList = ObjectGetters.listToGenerator(this.inventories.method<Il2Cpp.Object>("get_InventoryParts").invoke())
@@ -249,11 +241,27 @@ class Character {
                     const ItemIndex = cell.method<number>("get_CellIndex").invoke() + 1
                     const InventoryStack = cell.method<Il2Cpp.Object>("get_Stack").invoke()
                     const ItemName = InventoryStack.method<Il2Cpp.String>("get_Id").invoke().toString().replaceAll('"', "")
-                    ret[ItemIndex] = { amount: InventoryStack.method<number>("GetAmount").invoke(), object: InventoryStack, itemName: ItemName }
+                    ret[ItemIndex] = { amount: InventoryStack.method<number>("GetAmount").invoke(), object: cell, itemName: ItemName }
                 }
             }
         }
         return ret;
+    }
+}
+
+class Character {
+    player: Il2Cpp.Object;
+    character: Il2Cpp.Object;
+    inventories: Inventory;
+
+    constructor() {
+        this.player = ObjectGetters.waitForPlayer();
+        this.character = ObjectGetters.getCharacter();
+        this.inventories = new Inventory(this.character);
+    }
+    public getHealth() {
+        const Health = this.character.field<Il2Cpp.Object>("_health")?.value
+        return Health.method<number>("GetAmount").invoke();
     }
 
     public heal() {
@@ -269,7 +277,7 @@ class Character {
     }
 
     public async runFor(direction: DpadDirection, time: number) {
-        this.run(direction);
+        // this.run(direction);
         await wait(time);
         console.log("[CLIENT][CLIENT]Stopping Player");
         const dpad = ObjectGetters.getDpad()
@@ -288,10 +296,10 @@ class Character {
                 console.log("[CLIENT] Farming until full, Current health:", currenthealth);
 
 
-                const [items, totalItems] = this.getInventoryItems()
+                const [items, totalItems] = this.inventories.getBackpackItems()
                 const AVAILABLE_ITEMS = Object.keys(items)
 
-                const cellCount = this.inventories.method<number>("CellsCount").invoke()
+                const cellCount = this.inventories.getBackpackSpace();
 
                 if (cellCount == totalItems) {
                     console.log("[CLIENT] Inventory is full we can move back home");
@@ -332,30 +340,6 @@ class Character {
         });
     }
 
-    public run(direction: DpadDirection) {
-        const dpad = ObjectGetters.getDpad()
-
-        // const UnityEngine = Il2Cpp.domain.assembly("UnityEngine").image;
-        // let Vector2 = UnityEngine.class("UnityEngine.Vector2").alloc();
-        // Vector2.method<void>("Set").invoke(0.5, 0.5);
-        // Vector2 = Vector2.method<Il2Cpp.Object>("get_normalized").invoke()
-
-        let cords = [0.0, 0.0];
-        if (direction === "w") cords = [0.0, 1.0];
-        if (direction === "a") cords = [-1.0, 0.0];
-        if (direction === "s") cords = [0.0, -1.0];
-        if (direction === "d") cords = [1.0, 0.0];
-        if (direction === "wa") cords = [-1.0, 1.0];
-        if (direction === "wd") cords = [1.0, 1.0];
-        if (direction === "sa") cords = [-1.0, -1.0];
-        if (direction === "sd") cords = [1.0, -1.0];
-        if (direction === "stop") cords = [0, 0];
-
-        const vector = dpad.field<Il2Cpp.Object>("_defaultPos").value;
-        vector.method<void>("Set").invoke(cords[0], cords[1]);
-        const method = dpad.method<void>("Run");
-    }
-
     public teleport(x: number, y: number, z: number) {
     // const playerRotationVector3 = this.character.method<Il2Cpp.Object>("get_Rotation").invoke();
     // this.character.method<void>("Move").invoke(playerPositionVector3, playerRotationVector3, true, false);
@@ -367,11 +351,6 @@ class Character {
         this.character.method<void>("SetPosition").invoke(playerPositionVector3, true, false);
     }
 
-    public getAllInventories() {
-        // ObjectGetters.getAllInventories();
-        ObjectGetters.getAutoController();
-    }
-
     public async moveToLocation(name: LocationNames) {
         const Client = Il2Cpp.domain.assembly("Client").image;
 
@@ -379,6 +358,7 @@ class Character {
         const location = ObjectGetters.getLocationDescriptionFor(name);
         map.method<Il2Cpp.Object>("MoveToPoint").invoke(location);
 
+        console.log("[CLIENT] Now we can wait for player to reach the location");
         await wait(12.1 * 60 * 1000);
         // Enter location
         const GlobalMapPlayerModelView = Client.class("Assets.Core.Game.GlobalMap.GlobalMapPlayerModelView");
@@ -388,19 +368,34 @@ class Character {
             const element = arr[index];
             element.method<void>("EnterLocation").invoke();
         }
+        await wait(10000);
     }
 
-    public async putItemsForProcessing(itemName: string, tableLocation: Location, items: BackpackItemsWithIndex) {
+    public async putItemsForProcessing(itemNames: string[], tableLocation: Location, pickProcessed = false) {
+
+        const items = this.inventories.getInventoryItemsAndIndex();
+
         this.teleport(LOCATIONS[tableLocation][0], LOCATIONS[tableLocation][1], LOCATIONS[tableLocation][2])
         await wait(3000);
-        await executeEvent("use");
+        await Controllor.pressUse();
         await wait(2000);
 
-        const itemRowCol = getRowColumnForItem(itemName, items)
-        if (itemRowCol) await executeEvent("dbl_click_inventory", itemRowCol);
+
+        for (let index = 0; index < itemNames.length; index++) {
+            const itemName = itemNames[index];
+            const [row, col] = await Controllor.getRowColumnForItem(itemName, items);
+            if (row && col) {
+                await Controllor.dblClickOnCell(row, col);
+                await wait(2000);
+            }
+        }
+
+        if (pickProcessed) {
+            await Controllor.dblClickOnOutputCell();
+        }
 
         await wait(1000);
-        executeEvent("close_inventory");
+        await Controllor.closePanel();
         await wait(2000);
     }
 }
@@ -425,26 +420,15 @@ const LOCATIONS = {
 }
 type ChestLocation = keyof typeof CHEST_LOCATIONS;
 type Location = keyof typeof LOCATIONS;
-
-const executeEvent = (event: ControlEvents, args: string[] = []) => {
+const executeEvent = (event: ControlEvents, args: (number | string)[] = []) => {
     return new Promise((resolve) => {
-        console.log("[CLIENT] Executing Event", event, args);
+        // console.log("[CLIENT] Executing Event", event, args);
         send({ event: event, args: args });
         recv(event, () => {
-            console.log("[CLIENT] Event Executed", event);
+            // console.log("[CLIENT] Event Executed", event);
             resolve(true);
         });
     });
-}
-
-const getRowColumnForItem = (itemName: string, items: BackpackItemsWithIndex) => {
-    for (const key in items) {
-        if (items[key].itemName === itemName) {
-            const [x, y] = cellIndexToCords(Number(key));
-            return [String(x), String(y)];
-        }
-    }
-    return null;
 }
 
 
@@ -455,25 +439,32 @@ const start = () => {
 
             // player.teleport(LOCATIONS.HOME_MAP_TOP_RIGHT[0], LOCATIONS.HOME_MAP_TOP_RIGHT[1], LOCATIONS.HOME_MAP_TOP_RIGHT[2]);
             // await wait(3000);
-            // await executeEvent("run", ["WD", "5"]);
-            // await wait(3000);
+            // await Controllor.run("WD", 5);
+            // await wait(10000);
             // await player.moveToLocation("Trees_01_1");
-            // console.log("[CLIENT] Now we can wait for player to reach the location");
 
             // await executeEvent("auto");
             // await player.farmUntilFull();
 
             // player.teleport(LOCATIONS.TREES_MAP_TOP_RIGHT[0], LOCATIONS.TREES_MAP_TOP_RIGHT[1], LOCATIONS.TREES_MAP_TOP_RIGHT[2]);
             // await wait(3000);
-            // await executeEvent("run", ["WD", "5"]);
+            // await Controllor.run("WD", 5);
             // await wait(10000);
             // await player.moveToLocation("home");
 
             const keys = Object.keys(CHEST_LOCATIONS)
-            const items = player.getInventoryItemsAndIndex();
+            // const items = player.inventories.getInventoryItemsAndIndex();
+            // const [allItems, totalItems] = player.inventories.getAllItems();
+            // console.log("[CLIENT] All Items", Object.keys(allItems));
 
-            await player.putItemsForProcessing("wood", "WORKBENCH_1", items);
-            await player.putItemsForProcessing("wood", "WORKBENCH_2", items);
+            // await player.putItemsForProcessing(["wood"], "WORKBENCH_1", true);
+            // await player.putItemsForProcessing(["wood"], "WORKBENCH_2", true);
+
+
+
+            // await player.putItemsForProcessing(["resource_charcoal", "resource_plank_1"], "CAMPFIRE_1", true);
+            await player.putItemsForProcessing(["resource_charcoal", "resource_plank_1"], "CAMPFIRE_2", true);
+            // await player.putItemsForProcessing(["wood", "resource_plank_1"], "WORKBENCH_1", items);
 
             // for (let index = 0; index < keys.length; index++) {
             //     const key = keys[index];
@@ -504,12 +495,34 @@ const test = () => {
 
             const player = new Character();
             // console.log("[CLIENT] Health", player.getHealth());
+            const { items: ChestItems, handler } = player.inventories.getChestItems();
+            const [PlayerItems, _] = player.inventories.getBackpackItems();
 
-            // const items = player.getInventoryItemsAndIndex()
-            // // console.log(Object.keys(items));
+            console.log(Object.keys(PlayerItems));
+
+            handler.method<void>("OnDoubleClick").invoke(PlayerItems["thick_hat_fortified"].object[0], ChestItems["25"].object);
+
+            // for (const key in ChestItems) {
+            //     console.log(ChestItems[key].itemName, key);
+            //     // handler.method<void>("TakeItem").invoke(items[key].object);
+
+            // }
+            // console.log(items);
+
+            // const obj = ObjectGetters.getInventoryHandler();
+            // const ChestInventory = obj.field<Il2Cpp.Object>("_lootInventories").value;
+
+
+            // console.log(ChestInventory.method("CellsCount").invoke(), "sds");
+            // console.log(ChestInventory.method<Il2Cpp.Object>("get_InventoryParts").invoke(), "sds");
+            // ObjectGetters.listToGenerator(ChestInventory.method<Il2Cpp.Object>("get_InventoryParts").invoke()).next();
+            // console.log(obj.method<Il2Cpp.Object>("OnDoubleClick").invoke());
+
+            // const [items, _] = player.inventories.getAllItems()
+            // console.log(Object.keys(items));
             // for (const key in items) {
 
-            //     if (items[key].itemName === "resource_charcoal" && items[key].amount > 15) {
+            //     if (items[key].itemName === "wood" && items[key].amount > 15) {
             //         const [row, col] = cellIndexToCords(Number(key));
             //         await executeEvent("dbl_click_inventory", [String(row), String(col)]);
             //     }
@@ -527,6 +540,8 @@ const test = () => {
         });
     })
 }
+
+
 
 rpc.exports = {
     test: test,

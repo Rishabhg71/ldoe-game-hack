@@ -2,21 +2,37 @@ import "frida-il2cpp-bridge";
 import * as fs from "fs";
 import * as path from "path";
 
-
 Il2Cpp.perform(() => {
     try {
+        console.log("Starting the script");
+        // Il2Cpp.trace(true).domain().filterClasses((kclass) => kclass.fullName.includes("Inventory")).filterMethods((method) => {
+        //     // if (method.name === "OnPointerUp") return true;
+        //     // if (method.name === "OnPointerDown") return true;
+        //     // if (method.name === "OnPointerEnter") return true;
+        //     if (method.name === "HandleDoubleClick") return true;
+        //     return false;
+        // }).and().attach();
+        let trace = true;
 
-        Il2Cpp.trace(true).domain().filterClasses((klass) => {
+        // const targetClass = Il2Cpp.domain.assembly("Client").image.class("Assets.Core.Game.Dialogs.Inventory.InventoryHandler"); // Replace with the target class name
+        // targetClass.method<void>("OnDoubleClick").implementation = function (...args) {
+        //     trace = true;
+        //     console.log("OnDoubleClick");
+
+        //     return this.method<void>("OnDoubleClick").invoke(...args);
+        // }
+
+        Il2Cpp.trace(false).domain().filterClasses((klass) => {
             // if (klass.fullName.includes("Workbench")) return true;
-            // if (klass.fullName.includes("Cell")) return true;
-            if (klass.fullName.includes("Inventory")) return true;
+            if (klass.fullName.includes("Cell")) return true;
+            // if (klass.fullName.includes("Inventory")) return true;
 
-            if (klass.fullName.includes("WorkbenchInventoryStackReward")) return false;
-            if (klass.fullName.includes("WorkbenchHasFreeSkipsRequirement")) return false;
-            if (klass.fullName.includes("Assets.Core.Game.Dialogs.Inventory.StatsDialog")) return false;
-            if (klass.fullName.includes("Assets.Core.Game.Dialogs.Inventory.HungryLabelComponent")) return false;
+            // if (klass.fullName.includes("WorkbenchInventoryStackReward")) return false;
+            // if (klass.fullName.includes("WorkbenchHasFreeSkipsRequirement")) return false;
+            // if (klass.fullName.includes("Assets.Core.Game.Dialogs.Inventory.StatsDialog")) return false;
+            // if (klass.fullName.includes("Assets.Core.Game.Dialogs.Inventory.HungryLabelComponent")) return false;
             // if (klass.fullName.includes("InventoryCellController")) return false;
-            return false;
+            return true;
         }).filterMethods((method) => {
             if (method.name === "UpdateMovement") return false;
             if (method.name === "OnTicked") return false;
@@ -56,8 +72,11 @@ Il2Cpp.perform(() => {
             if (method.name === "OnPointerUp") return false;
             if (method.name === "OnPointerDown") return false;
             if (method.name === "OnPointerEnter") return false;
+            if (method.name === "SetRaycastActive") return false;
 
 
+            if (method.name === "SetActive") return false;
+            if (method.name === "get_IsInitialized") return false;
             if (method.name === "get_Stack") return false;
             if (method.name === "get_Recipes") return false;
             if (method.name === "get_RecipesTimeModifier") return false;
@@ -68,16 +87,16 @@ Il2Cpp.perform(() => {
     }
 });
 
+// Assets.Core.Game.Dialogs.Inventory.InventoryCellController::get_Inventories
+// Assets.Core.Models.InventoryModels.InventoryCell.InventoryCell::Add
 
 
-const pingPong = () => {
-    Il2Cpp.perform(() => {
+// Perform the tracing for a specific method
+// Il2Cpp.perform(() => {
 
-        // send({ event: "use" });
-        console.log("[CLIENT] Listening for message");
-        send({ event: "pokeFrom" });
-        recv("poke", () => {
-            console.log("[CLIENT] Event Executed", "use");
-        }).wait();
-    });
-}
+//     // const targetClass = Il2Cpp.domain.assembly("Client").image.class("Assets.Core.Models.InventoryModels.InventoryCell.InventoryCell"); // Replace with the target class name
+//     // const targetMethod = targetClass.method("Add"); // Replace with the target method name
+//     // Il2Cpp.backtrace(Backtracer.FUZZY).methods(targetMethod).and().attach();
+
+//     const targetClass = Il2Cpp.domain.assembly("Client").image.class("Assets.Core.Game.Dialogs.Inventory.InventoryHandler"); // Replace with the target class name
+// });

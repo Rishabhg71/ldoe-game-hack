@@ -74,8 +74,6 @@ class Server:
             self.control.double_click_for_inventory(row, col)
 
         if event == "double_click_final_products":
-            row = int(payload["args"][0]) - 1
-            col = int(payload["args"][1]) - 1
             self.control.double_click_final_products()
         
         if event == "run":
@@ -84,7 +82,7 @@ class Server:
             for i in range(int(times)):
                 self.control.run(direction)
 
-        print(f"[SERVER] Responding back to client to event: {event}")
+        print(f"[SERVER] Responding back to client to event: {event}", message)
         self.script.post({"type": event})
     
     # def on_message(self, message, data):
