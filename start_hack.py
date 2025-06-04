@@ -15,8 +15,9 @@ signal.signal(signal.SIGINT, handle_interrupt)
 
 device = frida.get_usb_device()
 
-# process = device.attach('zombie.survival.craft.z', realm="emulated")
-process = device.attach('Last Day On Earth: Survival', realm="emulated")
+
+process = device.attach('zombie.survival.craft.z', realm="emulated")
+# process = device.attach('Last Day On Earth: Survival', realm="emulated")
 
 class Server:
     script: frida.core.Script    
@@ -38,9 +39,14 @@ async def main():
     while True:
         command = input("Enter command:")
         script = server.create_script()
+        script.enable_debugger()
         script.load()
         if command == "main":
             res = script.exports_sync.main()
+            print(res)
+
+        if command == "test":
+            res = script.exports_sync.test()
             print(res)
 
 

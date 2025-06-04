@@ -8,8 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "watch": "vite build --watch",
-    "spawn": "frida -U -f zombie.survival.craft.z -l dist/index.js --realm emulated",
-    "attach": "frida -U -N zombie.survival.craft.z -l dist/index.js --realm emulated",
+    "spawn": "frida -U -f zombie.survival.craft.z -l dist/agent.js --realm emulated --debug",
+    "attach": "frida -U -N zombie.survival.craft.z -l dist/agent.js --realm emulated --debug",
     "compiler": "frida-compile dist/agent.js -o dist/index.js -w"
   },
   "devDependencies": {

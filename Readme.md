@@ -22,42 +22,87 @@ adb shell getprop ro.product.cpu.abi
 
 MyOwnInventory: Assets.Core.Models.Users.Player.get_Character -> CharacterModel.get_Inventories()
 
-# Locations
-Stones_01_5
-Trees_01_1
-Port
-FishingPier
-Tower_town
-Motel
-Farm_01
-Stones_02_79
-Shelter_01_60
-Tower_01_16
-Trees_02_13
-Boss_12
-Shelter_01_8
-Stones_01_7
-Stones_01_6
-Trees_01_3
-Trees_01_2
-home
-Found Location
-Trees_02_14
-Trees_02_15
-Trees_02_Locked_01
-Tower_02_17
-Shelter_02_19
-Oil_Plant_20
-Police_Station_01
-New_Gas_Station_01
-Swamp_01_2
-Swamp_01_1
-Quarry
-TowerIsland
-CaveIsland
-OilPlatform
-NewBase
-TransportHub
+
+
+
+
+0x021ce2b0+0x0dc Assets.Core.Manager.ModelViews.DialogModelView::ShowDialogAsync
+0x024c4890+0x4a8 Assets.Core.Models.LocationActions.Views.OpenUnlockedGradableChestLocationActionView::ShowDialog
+0x01b45f00+0x47c Assets.Core.Game.Battle.Location.Generation.LocationTerrain.LocationControllerActions::OnAddAction
+0x0241b7ac+0x160 Assets.Core.Models.LocationActions.LocationEntityActions::AddAction
+0x02863d80+0x1e4 Assets.Core.Models.Users.LocationObject.MultiActionsResolverDescription::ResolveAction
+0x0285db70+0x058 Assets.Core.Models.Users.LocationObject.LocationActionResolverDescription::SetUnpressed
+
+il2cpp: 
+0x01c2633c+0x000 Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiController::OnCloseButtonClick
+0x058f6630+0x190 UnityEngine.Events.UnityEvent::Invoke
+0x01abecb4+0x710 Assets.Core.Game.Battle.Touch.CustomInputModule::ProcessTouchPress
+0x01abdcc4+0x1a4 Assets.Core.Game.Battle.Touch.CustomInputModule::ProcessTouchEvents
+0x01abda60+0x04c Assets.Core.Game.Battle.Touch.CustomInputModule::Process
+
+il2cpp: 
+0x01c26954+0x000 Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiController::Hide
+0x01842a54+0x088 Assets.Core.Game.Dialogs.Inventory.LootDialog::OnHide
+0x02d62170+0x0a4 Assets.Core.Game.Dialogs.DialogController::Hide
+0x02d63b70+0x118 Assets.Core.Game.Dialogs.DialogsController::InnerHideDialog
+0x02d622bc+0x050 Assets.Core.Game.Dialogs.DialogsController::HideDialog
+0x058f6630+0x190 UnityEngine.Events.UnityEvent::Invoke
+0x01abecb4+0x710 Assets.Core.Game.Battle.Touch.CustomInputModule::ProcessTouchPress
+0x01abdcc4+0x1a4 Assets.Core.Game.Battle.Touch.CustomInputModule::ProcessTouchEvents
+0x01abda60+0x04c Assets.Core.Game.Battle.Touch.CustomInputModule::Process
+
+il2cpp:
+0x01c26d68+0x000 Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiController::DestroyPanels
+0x01c26954+0x2e0 Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiController::Hide
+0x01842a54+0x088 Assets.Core.Game.Dialogs.Inventory.LootDialog::OnHide
+0x02d62170+0x0a4 Assets.Core.Game.Dialogs.DialogController::Hide
+0x02d63b70+0x118 Assets.Core.Game.Dialogs.DialogsController::InnerHideDialog
+0x02d622bc+0x050 Assets.Core.Game.Dialogs.DialogsController::HideDialog
+0x058f6630+0x190 UnityEngine.Events.UnityEvent::Invoke
+0x01abecb4+0x710 Assets.Core.Game.Battle.Touch.CustomInputModule::ProcessTouchPress
+0x01abdcc4+0x1a4 Assets.Core.Game.Battle.Touch.CustomInputModule::ProcessTouchEvents
+0x01abda60+0x04c Assets.Core.Game.Battle.Touch.CustomInputModule::Process
+
+il2cpp: 
+0x01c2651c+0x000 Assets.Core.Game.Battle.Gui.InventoryUI.InventoryUiController::HideTooltip
+0x01842a54+0x224 Assets.Core.Game.Dialogs.Inventory.LootDialog::OnHide
+0x02d62170+0x0a4 Assets.Core.Game.Dialogs.DialogController::Hide
+0x02d63b70+0x118 Assets.Core.Game.Dialogs.DialogsController::InnerHideDialog
+0x02d622bc+0x050 Assets.Core.Game.Dialogs.DialogsController::HideDialog
+0x058f6630+0x190 UnityEngine.Events.UnityEvent::Invoke
+0x01abecb4+0x710 Assets.Core.Game.Battle.Touch.CustomInputModule::ProcessTouchPress
+0x01abdcc4+0x1a4 Assets.Core.Game.Battle.Touch.CustomInputModule::ProcessTouchEvents
+0x01abda60+0x04c Assets.Core.Game.Battle.Touch.CustomInputModule::Process
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
