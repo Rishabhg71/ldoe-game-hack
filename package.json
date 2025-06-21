@@ -10,7 +10,8 @@
     "watch": "vite build --watch",
     "spawn": "frida -U -f zombie.survival.craft.z -l dist/agent.js --realm emulated --debug",
     "attach": "frida -U -N zombie.survival.craft.z -l dist/agent.js --realm emulated --debug",
-    "compiler": "frida-compile dist/agent.js -o dist/index.js -w"
+    "compiler": "frida-compile dist/agent.js -o dist/index.js -w",
+    "trace": "frida -U -N zombie.survival.craft.z -l dist/agent.js --realm emulated"
   },
   "devDependencies": {
     "typescript": "^5.5.3",

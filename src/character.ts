@@ -22,16 +22,18 @@ export class CharacterModel extends BaseWrapper {
         return this._ref.method<Il2Cpp.Object>("get_Position").invoke();
     }
 
-    public teleport(x: number, y: number, z: number) {
-        return this.wrapper(async () => {
-            console.log("Teleporting to", x, y, z);
-            const playerPositionVector3 = this._ref.method<Il2Cpp.Object>("get_Position").invoke();
-            playerPositionVector3.field<number>("x").value = x;
-            playerPositionVector3.field<number>("y").value = y;
-            playerPositionVector3.field<number>("z").value = z;
+    public async teleport(x: number, y: number, z: number) {
+        x = Math.trunc(x * 100) / 100;
+        y = Math.trunc(y * 100) / 100;
+        z = Math.trunc(z * 100) / 100;
 
-            this._ref.method<void>("SetPosition").invoke(playerPositionVector3, true, false, true);
-        });
+        const playerPositionVector3 = this._ref.method<Il2Cpp.Object>("get_Position").invoke();
+        playerPositionVector3.field<number>("x").value = x;
+        playerPositionVector3.field<number>("y").value = y;
+        playerPositionVector3.field<number>("z").value = z;
+
+        this._ref.method<void>("SetPosition").invoke(playerPositionVector3, true, false, true);
+
     }
 
     public get inventories(): Inventories {

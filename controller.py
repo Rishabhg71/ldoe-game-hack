@@ -1,181 +1,122 @@
 import asyncio
-import threading
+import pyautogui
 import time
-from typing import Literal
 
-BUTTON_LOCATIONS = {
-    "AUTO": (50, 840),
-    "PUT_ALL": (1300, 820),
-    "TAKE_ALL": (930, 820),
-    "USE_IN_INVENTORY": (170, 820),
-    "SPLIT_IN_INVENTORY": (400, 820),
-    "DELETE_INVENTORY": (675, 820),
-    "SNEAK": (1550, 840),
-    "USE": (1350, 800),
-    "ATTACK": (1480, 670),
-    "BACKPACK": (1240, 835),
-    "CRAFT_BUTTON": (1150, 825),
-    "CLOSE_PANEL": (1540, 150),
-    "CRAFT_HATCHET_LOCATION": (180, 230),
-    "CRAFT_PICKAXE_LOCATION": (340, 230),
-    "FIANL_PRODUCTS": (1220, 480),
-    "DPAD_CENTER": (200, 700),
-    "DPAD_W": (200, 600),
-    "DPAD_A": (100, 700),
-    "DPAD_D": (300, 700),
-    "DPAD_S": (200, 800),
-    "DPAD_WA": (130, 630),
-    "DPAD_WD": (270, 630),
-    "DPAD_SA": (130, 765),
-    "DPAD_SD": (270, 765),
-}
+from test import find_image_on_screen
 
-
-
-
-
-class Controller:
-    def __init__(self) -> None:
-        self.client = AdbClient()
-        self.device = self.client.devices()[0]  # Get the first connected device
-
-    def tap(self, x, y, hold_for=None):
-        if hold_for:
-            self.hold_tap(x, y, hold_for)
-        else:
-            self.device.shell(f"input tap {x} {y}")
-
-    def hold_tap(self, x, y, duration):
-        self.device.shell(
-            f"input touchscreen swipe {x} {y} {x} {y} {int(duration * 1000)}"
-        )
-
-    def swipe(self, x1, y1, x2, y2, duration):
-        self.device.shell(
-            f"input touchscreen swipe {x1} {y1} {x2} {y2} {int(duration * 1000)}"
-        )
-
-    async def swipe_hold(self, x1, y1, x2, y2, duration):
-        self.device.shell(
-            f"input touchscreen swipe {x1} {y1} {x2} {y2} {int(0.3 * 1000)}"
-        )
+class AutoController:
+    def __init__(self):
+        # Set failsafe and pause between actions
+        pyautogui.FAILSAFE = True
+        pyautogui.PAUSE = 0.5
+    
+    def move_to(self, x, y, duration=0.5):
+        """Move mouse to specified coordinates"""
+        pyautogui.moveTo(x, y, duration=duration)
+    
+    def click_at(self, x, y, clicks=1):
+        """Click at specified coordinates"""
+        pyautogui.click(x=x, y=y, clicks=clicks)
+    
+    def type_text(self, text, interval=0.1):
+        """Type text with specified interval between keystrokes"""
+        pyautogui.typewrite(text, interval=interval)
+    
+    async def press_key(self, key):
+        """Press a single key"""
+        pyautogui.press(key)
+    
+    def get_mouse_position(self):
+        """Get current mouse position"""
+        return pyautogui.position()
+    
+    def screenshot(self, filename):
+        """Take a screenshot and save to file"""
+        pyautogui.screenshot(filename)
+    
+    async def wait_until_on_screen(self, image_path, timeout=None, confidence=0.9):
+        """
+        Find image on screen and return coordinates.
+        Keeps waiting until the image is found or timeout is reached.
         
-        self.device.shell(
-            f"input touchscreen swipe {x2} {y2} {x2} {y2} {int(duration * 1000)}"
-        )
-    
-    def press_auto(self):
-        x, y = BUTTON_LOCATIONS["AUTO"]
-        self.tap(x, y)
-
-    def press_sneak(self):
-        x, y = BUTTON_LOCATIONS["SNEAK"]
-        self.tap(x, y)
-
-    def press_use(self, hold_for=None):
-        x, y = BUTTON_LOCATIONS["USE"]
-        self.tap(x, y, hold_for)
-
-    def press_attack(self, hold_for=None):
-        x, y = BUTTON_LOCATIONS["ATTACK"]
-        if hold_for:
-            self.hold_tap(x, y, hold_for)
-        else:
-            self.tap(x, y)
-
-    def press_backpack(self):
-        x, y = BUTTON_LOCATIONS["BACKPACK"]
-        self.tap(x, y)
-
-    def press_craft_button(self):
-        x, y = BUTTON_LOCATIONS["CRAFT_BUTTON"]
-        self.tap(x, y)
-    
-    def press_take_all(self):
-        x, y = BUTTON_LOCATIONS["TAKE_ALL"]
-        self.tap(x, y)
-
-    def press_put_all(self):
-        x, y = BUTTON_LOCATIONS["PUT_ALL"]
-        self.tap(x, y)
-
-    def press_close_panel(self):
-        x, y = BUTTON_LOCATIONS["CLOSE_PANEL"]
-        self.tap(x, y)
-
-    def craft_hatchet(self):
-        x, y = BUTTON_LOCATIONS["CRAFT_HATCHET_LOCATION"]
-        self.tap(x, y)
-
-    def craft_pickaxe(self):
-        x, y = BUTTON_LOCATIONS["CRAFT_PICKAXE_LOCATION"]
-        self.tap(x, y)
-
-    def run_in_thread(self, func, *args, **kwargs):
-        thread = threading.Thread(target=func, args=args, kwargs=kwargs)
-        return thread
-
-    def double_click_for_inventory(self, row:int, col:int):
-        CELL1_CENTER = (150, 165)
-        CELL_HALF_LENGTH = (210 - 90)
-        X = CELL1_CENTER[0] + (CELL_HALF_LENGTH * row)
-        Y = CELL1_CENTER[1] + (CELL_HALF_LENGTH * col)
-        print(X, Y, "DSDSD", row, col)
-        def tap(x, y):
-            self.device.shell(f"input tap {x} {y}")
+        Args:
+            image_path: Path to the image file to locate
+            timeout: Maximum time to wait in seconds (None for infinite)
+            confidence: Matching confidence threshold (0-1)
+        """
+        start_time = time.time()
         
-        tap(X, Y)
-        time.sleep(0.5)
-        thread1 = self.run_in_thread(tap, X, Y)
-        thread2 = self.run_in_thread(tap, X, Y)
+        while True:
+            try:
+                # location = pyautogui.locateOnScreen(image_path, confidence=confidence, grayscale=True)
+                location = find_image_on_screen("loading.png", threshold=confidence, show_window=True)
+                if location:
+                    print(f"Image found at: {location}")
+                    return location
+            except pyautogui.ImageNotFoundException as e:
+                print(f"Image not found yet: {e}")
+            
+            if timeout is not None and (time.time() - start_time) > timeout:
+                return None
+            
+            await asyncio.sleep(0.5)
 
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
+    async def hold_keys(self, keys: list[str], duration: float = 1.0) -> None:
+        """Hold multiple keys simultaneously for specified duration"""
+        for key in keys:
+            pyautogui.keyDown(key)
 
-    def double_click_final_products(self):
-        X, Y = BUTTON_LOCATIONS["FIANL_PRODUCTS"]
-        def tap(x, y):
-            self.device.shell(f"input tap {x} {y}")
+        await asyncio.sleep(duration)
+        for key in reversed(keys):
+            pyautogui.keyUp(key)
 
-        tap(X, Y)
-        time.sleep(0.5)
+    async def press_keys_down(self, keys: list[str], duration: float = 1.0) -> None:
+        """Hold multiple keys simultaneously for specified duration"""
+        for key in keys:
+            pyautogui.keyDown(key)
 
+    async def press_keys_up(self, keys: list[str]) -> None:
+        """Release multiple keys simultaneously"""
+        for key in reversed(keys):
+            pyautogui.keyUp(key)
 
-        thread1 = self.run_in_thread(tap, X, Y)
-        thread2 = self.run_in_thread(tap, X, Y)
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
-        # time.sleep()
-
-
-    def run(self, direction: Literal["W", "A", "S", "D", "WA", "WD", "SA", "SD"]):
-        centerX, centerY = BUTTON_LOCATIONS["DPAD_CENTER"]
-        destination = (centerX, centerY)
-        if direction == "W":
-            destination = BUTTON_LOCATIONS["DPAD_W"]
-        elif direction == "A":
-            destination = BUTTON_LOCATIONS["DPAD_A"]
-        elif direction == "S":
-            destination = BUTTON_LOCATIONS["DPAD_S"]
-        elif direction == "D":
-            destination = BUTTON_LOCATIONS["DPAD_D"]
-        elif direction == "WA":
-            destination = BUTTON_LOCATIONS["DPAD_WA"]
-        elif direction == "WD":
-            destination = BUTTON_LOCATIONS["DPAD_WD"]
-        elif direction == "SA":
-            destination = BUTTON_LOCATIONS["DPAD_SA"]
-        elif direction == "SD":
-            destination = BUTTON_LOCATIONS["DPAD_SD"]
-
-        self.swipe(centerX, centerY, destination[0], destination[1], duration=0.3)
-
-if __name__ == "__main__":
-    asyncio.run(Controller().double_click_for_inventory(0, 0))
+    async def move_item_from_player_to_chest(self, item_number: int) -> None:
+        row_number = item_number // 5
+        column_number = item_number % 5
+        # if column_number == 0:
+        
+        if item_number % 5 == 0:
+            column_number = 5
+            row_number -= 1
+        
+        row_to_key_map = {
+            0: "z",
+            1: "x",
+            2: "c",
+            3: "v",
+            4: "b",
+        }
+        print(f"Moving item {item_number} from player to chest at row {row_number}, column {column_number} with {str(row_to_key_map[row_number]), str(column_number)}")
+        await self.hold_keys([str(row_to_key_map[row_number]), str(column_number)], duration=0.1)
     
-# Controller().press_attack(hold_for=5)
-# Controller().press_put_all()
+    async def move_item_from_chest_to_player(self, item_number: int) -> None:
+        row_number = item_number // 5
+        column_number = (item_number % 5) + 5
+
+        row_to_key_map = {
+            0: "z",
+            1: "x",
+            2: "c",
+            3: "v",
+            4: "b",
+        }
+
+        await self.hold_keys([row_to_key_map[row_number], column_number], duration=0.5)
+
+controller = AutoController()
+
+# Key up everything
+# for i in ['z', 'x', 'c', 'v', 'b']:
+#     pyautogui.keyUp(i)
+#     for j in range(10):
+#         pyautogui.keyUp(str(j))

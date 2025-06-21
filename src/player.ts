@@ -19,7 +19,6 @@ export class Player {
         const GameManagerClass = Client.class("Assets.Core.Manager.GameManager");
         const gameManagerArr = Il2Cpp.gc.choose(GameManagerClass)
 
-        console.log("[CLIENT]Number of instances of Assets.Core.Models.Users.Player ->", gameManagerArr.length);
         for (let index = 0; index < gameManagerArr.length; index++) {
             const element = gameManagerArr[index];
             return element;
